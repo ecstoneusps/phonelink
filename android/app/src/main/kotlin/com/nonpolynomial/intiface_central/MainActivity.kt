@@ -21,6 +21,14 @@ class MainActivity: FlutterActivity() {
     MdnsForegroundTaskLifecycleListener.init(applicationContext)
     FlutterForegroundTaskPlugin.addTaskLifecycleListener(MdnsForegroundTaskLifecycleListener)
     MdnsPlatformChannel.register(applicationContext, flutterEngine)
+    // PhoneLink: BLE broadcast support for connectionless toys.
+    PhoneLinkBroadcast.register(applicationContext, flutterEngine)
+  }
+
+  override fun onDestroy() {
+    // Never leave a toy running if the app goes away.
+    PhoneLinkBroadcast.stop()
+    super.onDestroy()
   }
 }
 

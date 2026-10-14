@@ -30,6 +30,7 @@ import 'package:intiface_central/bloc/util/error_notifier_cubit.dart';
 import 'package:intiface_central/bloc/util/gui_settings_cubit.dart';
 import 'package:intiface_central/bloc/util/navigation_cubit.dart';
 import 'package:intiface_central/bloc/util/network_info_cubit.dart';
+import 'package:intiface_central/phonelink/lovespouse_bridge.dart';
 import 'package:intiface_central/util/bluetooth_check.dart';
 import 'package:intiface_central/util/intiface_util.dart';
 import 'package:intiface_central/util/logging.dart';
@@ -432,6 +433,13 @@ class IntifaceCentralApp extends StatelessWidget with WindowListener, TrayListen
 
     var deviceControlBloc = DeviceManagerBloc(
         engineControlBloc.stream, engineControlBloc.add, () => engineRepo.observationStream);
+
+    // PhoneLink: drive LoveSpouse broadcast toys from engine output observations.
+    LoveSpouseBridge(
+      deviceStates: deviceControlBloc.stream,
+      engineStates: engineControlBloc.stream,
+      observationStream: () => engineRepo.observationStream,
+    );
 
     ///
     /// ORDER MATTERS HERE
