@@ -86,8 +86,12 @@ object PhoneLinkBroadcast {
 
       val params = AdvertisingSetParameters.Builder()
         .setLegacyMode(true)
-        .setConnectable(false)
-        .setScannable(false)
+        // Connectable makes Android add the Flags field and send ADV_IND
+        // packets, matching what the official iPhone app and nRF Connect's
+        // working clone send. LoveSpouse toys ignored the non-connectable
+        // version. (Legacy connectable advertising must also be scannable.)
+        .setConnectable(true)
+        .setScannable(true)
         .setInterval(AdvertisingSetParameters.INTERVAL_MIN)
         .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_HIGH)
         .build()
