@@ -64,10 +64,15 @@ class LoveSpouseBridge {
   Future<void> _onDeviceState(DeviceManagerState state) async {
     if (state is DeviceManagerDeviceOnlineState) {
       final device = state.device.device;
-      if (device == null || !isLoveSpouse(device)) return;
+      if (device == null) return;
+      if (!isLoveSpouse(device)) {
+        logInfo('PhoneLink: "${device.displayName ?? device.name}" is not a LoveSpouse device, ignoring');
+        return;
+      }
       logInfo('PhoneLink: LoveSpouse bridge attached to "${device.displayName ?? device.name}"');
       _devices[state.device] = (index: device.index, maxValue: _maxValue(device));
-      await Permission.bluetoothAdvertise.request();
+      final permission = await Permission.bluetoothAdvertise.request();
+      logInfo('PhoneLink: Bluetooth advertise permission: $permission');
       // The observation stream is recreated on each engine start, so
       // resubscribe now that we know the engine is running.
       await _observationSub?.cancel();
@@ -101,6 +106,7 @@ class LoveSpouseBridge {
       _currentLevel = -1;
       return;
     }
+    logInfo('PhoneLink: LoveSpouse broadcasting level $level');
     if (level == 0) {
       // Keep sending "stop" briefly so the toy hears it, then go quiet.
       _stopTimer = Timer(_stopHold, () {
