@@ -71,12 +71,22 @@ class LoveSpouseBridge {
       }
       logInfo('PhoneLink: LoveSpouse bridge attached to "${device.displayName ?? device.name}"');
       _devices[state.device] = (index: device.index, maxValue: _maxValue(device));
-      final permission = await Permission.bluetoothAdvertise.request();
-      logInfo('PhoneLink: Bluetooth advertise permission: $permission');
       // The observation stream is recreated on each engine start, so
-      // resubscribe now that we know the engine is running.
+      // resubscribe now that we know the engine is running. Do this before
+      // anything that can fail or wait, so commands always get through.
       await _observationSub?.cancel();
-      _observationSub = _observationStream().listen(_onObservation);
+      _observationSub = _observationStream().listen(
+        _onObservation,
+        onError: (Object e) => logError('PhoneLink: observation stream error: $e'),
+        onDone: () => logInfo('PhoneLink: observation stream closed'),
+      );
+      logInfo('PhoneLink: listening for commands to device index ${device.index}');
+      try {
+        final permission = await Permission.bluetoothAdvertise.request();
+        logInfo('PhoneLink: Bluetooth advertise permission: $permission');
+      } catch (e) {
+        logError('PhoneLink: could not request advertise permission: $e');
+      }
     } else if (state is DeviceManagerDeviceOfflineState) {
       if (_devices.remove(state.device) != null) {
         logInfo('PhoneLink: LoveSpouse device went offline, stopping toy');
@@ -86,6 +96,7 @@ class LoveSpouseBridge {
   }
 
   void _onObservation(DeviceOutputObservation obs) {
+    logDebug('PhoneLink: observation device ${obs.deviceIndex} ${obs.outputType} = ${obs.value}');
     for (final entry in _devices.values) {
       if (entry.index == obs.deviceIndex) {
         _setLevel(LoveSpouse.levelForValue(obs.value.abs(), entry.maxValue));
