@@ -9,6 +9,8 @@ import 'package:intiface_central/page/add_serial_device_page.dart';
 import 'package:intiface_central/page/add_simulated_device_page.dart';
 import 'package:intiface_central/page/add_websocket_device_page.dart';
 import 'package:intiface_central/page/device_detail_page.dart';
+import 'package:intiface_central/phonelink/broadcast_channel.dart';
+import 'package:intiface_central/phonelink/lovespouse_lab_page.dart';
 import 'package:intiface_central/src/rust/api/device_config.dart';
 import 'package:intiface_central/util/docs_screenshot_keys.dart';
 import 'package:intiface_central/widget/device_list_card_widget.dart';
@@ -20,6 +22,8 @@ enum _DeviceSubPage {
   addWebsocket,
   addSerial,
   addSimulated,
+  // PhoneLink addition
+  loveSpouseLab,
 }
 
 class DevicePage extends StatefulWidget {
@@ -64,6 +68,12 @@ class _DevicePageState extends State<DevicePage> {
     });
   }
 
+  void _goToLoveSpouseLab() {
+    setState(() {
+      _currentPage = _DeviceSubPage.loveSpouseLab;
+    });
+  }
+
   void _goBack() {
     setState(() {
       _currentPage = _DeviceSubPage.list;
@@ -83,6 +93,7 @@ class _DevicePageState extends State<DevicePage> {
       _DeviceSubPage.list => _DeviceListView(
         onDeviceTap: _goToDetail,
         onAddDeviceTap: _goToAddType,
+        onLoveSpouseLabTap: _goToLoveSpouseLab,
       ),
       _DeviceSubPage.detail => DeviceDetailPage(
         identifier: _selectedIdentifier!,
@@ -101,6 +112,7 @@ class _DevicePageState extends State<DevicePage> {
       _DeviceSubPage.addSimulated => AddSimulatedDevicePage(
         onBack: _goBackToAddType,
       ),
+      _DeviceSubPage.loveSpouseLab => LoveSpouseLabPage(onBack: _goBack),
     };
   }
 }
@@ -108,10 +120,12 @@ class _DevicePageState extends State<DevicePage> {
 class _DeviceListView extends StatelessWidget {
   final void Function(ExposedUserDeviceIdentifier identifier) onDeviceTap;
   final VoidCallback onAddDeviceTap;
+  final VoidCallback onLoveSpouseLabTap;
 
   const _DeviceListView({
     required this.onDeviceTap,
     required this.onAddDeviceTap,
+    required this.onLoveSpouseLabTap,
   });
 
   @override
@@ -185,6 +199,15 @@ class _DeviceListView extends StatelessWidget {
                                       : null,
                                   child: const Text("Stop Scanning"),
                                 ),
+                          // PhoneLink addition
+                          if (PhoneLinkBroadcast.supported) ...[
+                            const Spacer(),
+                            TextButton.icon(
+                              icon: const Icon(Icons.science_outlined),
+                              label: const Text('LoveSpouse Test Lab'),
+                              onPressed: onLoveSpouseLabTap,
+                            ),
+                          ],
                         ],
                       ),
                       Expanded(

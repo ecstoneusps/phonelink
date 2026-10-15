@@ -4,11 +4,14 @@
 // verified by replaying in nRF Connect. The iPhone app hides the command in a
 // "Complete list of 16-bit Service UUIDs" advertisement:
 //
-//   header (8 bytes, constant; likely includes the QR-code pairing ID)
+//   header (8 bytes: the encoded "wbMSE" toy-radio address, same for all
+//           default-address toys)
 //   command (3 bytes)
 //   0B 0C 0D ... 19 (15 bytes of padding)
 //
 // See the "LoveSpouse protocol findings" doc in the Toys project.
+
+import 'package:intiface_central/phonelink/lovespouse_encoder.dart';
 
 class LoveSpouse {
   /// Number of intensity levels the toy supports (not counting stop).
@@ -60,6 +63,32 @@ class LoveSpouse {
         ...command,
         for (var b = 0x0B; b <= 0x19; b++) b,
       ];
+
+  /// Plain command numbers (see the protocol findings doc). The 3-byte
+  /// [levelCommands] above are these values run through the encoder.
+  static const int plainStop = 0x00;
+  static const int plainLevel1 = 0x12;
+  static const int plainLevel8 = 0x19;
+  static const int plainMax = 0x20;
+
+  /// Encodes any plain command (or longer payload) into the full 26-byte
+  /// advertisement payload. Bytes after the encoded data are filler whose
+  /// value equals their position, matching the official app.
+  static List<int> payloadForPlain(List<int> plainPayload) {
+    final encoded = LoveSpouseEncoder.encode(plainPayload);
+    return [
+      ...encoded,
+      for (var i = encoded.length; i < 26; i++) i,
+    ];
+  }
+
+  /// [payloadForPlain] as 16-bit service UUIDs (little-endian byte pairs).
+  static List<int> serviceUuidsForPlain(List<int> plainPayload) {
+    final bytes = payloadForPlain(plainPayload);
+    return [
+      for (var i = 0; i + 1 < bytes.length; i += 2) bytes[i] | (bytes[i + 1] << 8),
+    ];
+  }
 
   /// The payload expressed as 16-bit service UUIDs (little-endian byte pairs),
   /// which is how Android's advertiser accepts it.
